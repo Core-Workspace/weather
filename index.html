@@ -8,45 +8,46 @@
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: linear-gradient(to bottom, #1e3c72, #2a5298);
+      background: linear-gradient(to bottom, #0f2027, #203a43, #2c5364);
       color: white;
       display: flex;
       justify-content: center;
     }
-    .weather-app {
+    .app {
       max-width: 600px;
       width: 100%;
       padding: 20px;
     }
-    .header {
+    .current {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
-    .header h1 {
-      font-size: 4rem;
+    .current h1 {
+      font-size: 5rem;
       margin: 0;
     }
-    .header h2 {
+    .current h2 {
       font-size: 1.5rem;
       margin: 5px 0;
       font-weight: 400;
     }
-    .hourly, .daily {
-      background: rgba(255,255,255,0.1);
+    .card {
+      background: rgba(255, 255, 255, 0.1);
       border-radius: 20px;
       padding: 15px;
       margin-bottom: 20px;
+      backdrop-filter: blur(10px);
     }
     .hourly-scroll {
       display: flex;
       overflow-x: auto;
       gap: 15px;
     }
-    .hour-card {
+    .hour {
       text-align: center;
       min-width: 60px;
     }
-    .daily .day-row {
+    .day {
       display: flex;
       justify-content: space-between;
       padding: 8px 0;
@@ -58,35 +59,33 @@
       gap: 15px;
     }
     .detail-card {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.1);
       border-radius: 15px;
       padding: 15px;
       text-align: center;
     }
     .detail-card h3 {
-      margin: 5px 0;
-      font-size: 1rem;
+      font-size: 0.9rem;
       font-weight: 400;
+      margin: 0 0 5px;
     }
     .detail-card p {
-      margin: 0;
       font-size: 1.2rem;
+      margin: 0;
       font-weight: bold;
     }
   </style>
 </head>
 <body>
-  <div class="weather-app">
-    <div class="header" id="currentWeather">
-      <h2>Loading...</h2>
-    </div>
+  <div class="app">
+    <div class="current" id="currentWeather">Loading...</div>
 
-    <div class="hourly">
+    <div class="card">
       <h3>Hourly Forecast</h3>
       <div class="hourly-scroll" id="hourlyForecast"></div>
     </div>
 
-    <div class="daily">
+    <div class="card">
       <h3>10-Day Forecast</h3>
       <div id="dailyForecast"></div>
     </div>
@@ -96,23 +95,35 @@
 
   <script>
     async function fetchWeather(lat, lon, locationName="Your Location") {
-      const res = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,precipitation_probability&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,uv_index_max,moon_phase&timezone=auto`
-      );
-      const data = await res.json();
-      displayWeather(data, locationName);
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,apparent_temperature,precipitation_probability,relative_humidity_2m,windspeed_10m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,moon_phase&timezone=auto`;
+      
+      const airUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=us_aqi&timezone=auto`;
+
+      const [weatherRes, airRes] = await Promise.all([fetch(url), fetch(airUrl)]);
+      const weather = await weatherRes.json();
+      const air = await airRes.json();
+
+      displayWeather(weather, air, locationName);
     }
 
-    function displayWeather(data, locationName) {
+    function displayWeather(data, air, locationName) {
       const current = data.current_weather;
       const nowTemp = Math.round(current.temperature);
-      const desc = "Feels like " + nowTemp + "°";
+      const feelsLike = Math.round(data.hourly.apparent_temperature[0]);
+      const humidity = data.hourly.relative_humidity_2m[0];
+      const wind = Math.round(data.hourly.windspeed_10m[0]);
+      const uv = data.daily.uv_index_max[0];
+      const sunrise = new Date(data.daily.sunrise[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const sunset = new Date(data.daily.sunset[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const moon = data.daily.moon_phase[0].toFixed(2);
+      const aqi = air.hourly.us_aqi[0];
 
       // Current
       document.getElementById("currentWeather").innerHTML = `
         <h2>${locationName}</h2>
         <h1>${nowTemp}°</h1>
-        <h2>${desc}</h2>
+        <h2>Feels like ${feelsLike}°</h2>
+        <p>Humidity ${humidity}% • Wind ${wind} km/h</p>
       `;
 
       // Hourly
@@ -123,7 +134,7 @@
         const temp = Math.round(data.hourly.temperature_2m[i]);
         const pop = data.hourly.precipitation_probability[i];
         hourlyEl.innerHTML += `
-          <div class="hour-card">
+          <div class="hour">
             <div>${time}:00</div>
             <div>${temp}°</div>
             <div>${pop}%</div>
@@ -141,7 +152,7 @@
         const max = Math.round(data.daily.temperature_2m_max[i]);
         const pop = data.daily.precipitation_sum[i];
         dailyEl.innerHTML += `
-          <div class="day-row">
+          <div class="day">
             <div>${day}</div>
             <div>${max}° / ${min}°</div>
             <div>${pop}mm</div>
@@ -150,31 +161,21 @@
       }
 
       // Details
-      const detailsEl = document.getElementById("details");
-      detailsEl.innerHTML = `
-        <div class="detail-card">
-          <h3>Sunrise</h3><p>${new Date(data.daily.sunrise[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-        </div>
-        <div class="detail-card">
-          <h3>Sunset</h3><p>${new Date(data.daily.sunset[0]).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-        </div>
-        <div class="detail-card">
-          <h3>UV Index</h3><p>${data.daily.uv_index_max[0]}</p>
-        </div>
-        <div class="detail-card">
-          <h3>Moon Phase</h3><p>${data.daily.moon_phase[0].toFixed(2)}</p>
-        </div>
+      document.getElementById("details").innerHTML = `
+        <div class="detail-card"><h3>UV Index</h3><p>${uv}</p></div>
+        <div class="detail-card"><h3>Air Quality</h3><p>${aqi}</p></div>
+        <div class="detail-card"><h3>Sunrise</h3><p>${sunrise}</p></div>
+        <div class="detail-card"><h3>Sunset</h3><p>${sunset}</p></div>
+        <div class="detail-card"><h3>Wind</h3><p>${wind} km/h</p></div>
+        <div class="detail-card"><h3>Humidity</h3><p>${humidity}%</p></div>
+        <div class="detail-card"><h3>Moon</h3><p>${moon}</p></div>
       `;
     }
 
     // Detect location
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        fetchWeather(pos.coords.latitude, pos.coords.longitude);
-      },
-      () => {
-        fetchWeather(40.7128, -74.0060, "New York"); // fallback
-      }
+      (pos) => fetchWeather(pos.coords.latitude, pos.coords.longitude, "Your Location"),
+      () => fetchWeather(40.7128, -74.0060, "New York") // fallback
     );
   </script>
 </body>
