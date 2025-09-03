@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom, #87ceeb, #f0f8ff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      color: #222;
+    }
+    header {
+      padding: 20px;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .search-bar {
+      margin: 10px 0;
+    }
+    .search-bar input {
+      padding: 10px;
+      width: 250px;
+      border: none;
+      border-radius: 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .current-weather {
+      text-align: center;
+      margin: 20px 0;
+      padding: 20px;
+    }
+    .current-weather h1 {
+      font-size: 4rem;
+      margin: 10px 0;
+    }
+    .current-weather img {
+      width: 80px;
+      height: 80px;
+    }
+    .details {
+      font-size: 1rem;
+      color: #555;
+    }
+    .forecast {
+      display: flex;
+      gap: 10px;
+      margin: 20px 0;
+      overflow-x: auto;
+      padding: 10px;
+    }
+    .forecast-card {
+      flex: 0 0 auto;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 15px;
+      text-align: center;
+      width: 100px;
+    }
+    .forecast-card img {
+      width: 40px;
+      height: 40px;
+    }
+  </style>
+</head>
+<body>
+  <header>Weather</header>
+
+  <div class="search-bar">
+    <input type="text" placeholder="Search city...">
+  </div>
+
+  <div class="current-weather">
+    <img src="https://openweathermap.org/img/wn/01d@2x.png" alt="sunny">
+    <h1>72°</h1>
+    <div class="details">Sunny • Feels like 74°</div>
+    <div class="details">Humidity: 40% • Wind: 5 mph</div>
+  </div>
+
+  <div class="forecast">
+    <div class="forecast-card">
+      <div>Mon</div>
+      <img src="https://openweathermap.org/img/wn/02d.png" alt="">
+      <div>70° / 55°</div>
+    </div>
+    <div class="forecast-card">
+      <div>Tue</div>
+      <img src="https://openweathermap.org/img/wn/10d.png" alt="">
+      <div>68° / 52°</div>
+    </div>
+    <div class="forecast-card">
+      <div>Wed</div>
+      <img src="https://openweathermap.org/img/wn/04d.png" alt="">
+      <div>65° / 50°</div>
+    </div>
+    <div class="forecast-card">
+      <div>Thu</div>
+      <img src="https://openweathermap.org/img/wn/01d.png" alt="">
+      <div>75° / 56°</div>
+    </div>
+    <div class="forecast-card">
+      <div>Fri</div>
+      <img src="https://openweathermap.org/img/wn/09d.png" alt="">
+      <div>62° / 48°</div>
+    </div>
+  </div>
+</body>
+</html>
