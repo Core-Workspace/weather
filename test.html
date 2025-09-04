@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weather Test</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #111;
+      color: #0f0;
+      padding: 20px;
+    }
+    h1 { font-size: 1.5rem; }
+    pre { background: #000; padding: 10px; border-radius: 8px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Weather Test (Raw Data)</h1>
+  <div id="output">Loading...</div>
+
+  <script>
+    async function fetchWeather(lat, lon, locationName="Your Location") {
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,apparent_temperature,relative_humidity_2m,windspeed_10m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max&timezone=auto`;
+      const airUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&hourly=us_aqi&timezone=auto`;
+
+      const [weatherRes, airRes] = await Promise.all([fetch(weatherUrl), fetch(airUrl)]);
+      const weather = await weatherRes.json();
+      const air = await airRes.json();
+
+      const current = weather.current_weather;
+      const feelsLike = weather.hourly.apparent_temperature[0];
+      const max = weather.daily.temperature_2m_max[0];
+      const min = weather.daily.temperature_2m_min[0];
+      const aqi = air.hourly.us_aqi[0];
+
+      document.getElementById("output").innerHTML = `
+        <pre>
+Location: ${locationName}
+
+Current Temp: ${current.temperature}°C
+Feels Like:   ${feelsLike}°C
+Wind:         ${current.windspeed} km/h
+Humidity:     ${weather.hourly.relative_humidity_2m[0]}%
+
+Today's High: ${max}°C
+Today's Low:  ${min}°C
+
+Sunrise: ${new Date(weather.daily.sunrise[0]).toLocaleTimeString()}
+Sunset:  ${new Date(weather.daily.sunset[0]).toLocaleTimeString()}
+
+UV Index Max: ${weather.daily.uv_index_max[0]}
+Air Quality:  AQI ${aqi}
+        </pre>
+      `;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      pos => fetchWeather(pos.coords.latitude, pos.coords.longitude, "Your Location"),
+      () => fetchWeather(40.7128, -74.0060, "New York") // fallback
+    );
+  </script>
+</body>
+</html>
